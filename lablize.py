@@ -45,22 +45,6 @@ def preprocess_text(text):
     # Returns the list of tuples
     return tagging
 
-def get_entities(text):
-    """
-    This function takes a text. Uses the Spacy model.
-    The model will tokenize, POS-tag and recognize the entities named in the text.
-    Then, the entities are retrieved and saved in a list.
-    It outputs a list with the named entities. It also outputs the result of applying
-    the model to the text.
-    """
-    # Apply the model
-    tags = nlp(text)
-    print(tags)
-    # Append all entities recognized
-    entities = [X.text for X in tags.ents]
-    print(tags.ents)
-    # Return the list of entities and the result of the model.
-    return entities, tags
 
 if __name__ == '__main__':
     main()
