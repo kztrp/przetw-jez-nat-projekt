@@ -9,6 +9,16 @@ The project is carried out as part of an course at the Faculty of Electronics of
 The aim of the project is to acquire practical skills and implementation of natural language processing.
 The chosen technique is OCR and the problem is the recognition of units in the content.
 
+## Methods:
+
+We are going to compare the implementations for our dataset of three methods from the NLTK library 
+
+
+> Methods
+>
+>  * Unigram Tagger,
+>  * Unigram Tagger with Regexp Tagger,
+>  * Brill Tagger Trainer.
 
 ## Preview Images:
 
