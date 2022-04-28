@@ -25,6 +25,12 @@ We are going to compare the implementations for our dataset of three methods fro
 
 ## Prerequisites [for developers]
 
+
+Install packages with pip: -r requirements.txt
+
+ ```bash
+    pip install -r requirements.txt
+ ```
 Run the Python interpreter and type the commands:
 
  ```bash
