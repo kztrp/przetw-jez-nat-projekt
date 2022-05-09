@@ -10,11 +10,11 @@ def main():
         text = f.read()
         labeled_text = preprocess_text(text)
         k = math.floor(len(labeled_text) / 4)
-        # print(labeled_text)
+        print(labeled_text)
         training_data = labeled_text[:k]
         baseline_data = labeled_text[k:3 * k]
         gold_data = list(labeled_text[3 * k:])
-        # print(gold_data)
+        print(gold_data)
         testing_data = [untag([s]) for s in gold_data]
         backoff = RegexpTagger([
             (r'^-?[0-9]+(.[0-9]+)?$', 'CD'),  # cardinal numbers
