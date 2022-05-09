@@ -398,7 +398,7 @@ REGEXP_TAGGER = RegexpTagger(
         (r".*s$", "NNS"),  # plural nouns
         (r".*ing$", "VBG"),  # gerunds
         (r".*ed$", "VBD"),  # past tense verbs
-        (r".*", "NN"),  # nouns (default)
+        (r".*", "NN"),  # nouns (default)`
     ]
 )
 
