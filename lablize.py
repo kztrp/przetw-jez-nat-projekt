@@ -3,42 +3,72 @@ import math
 from nltk.tbl.template import Template
 from nltk.tag.brill import Pos, Word
 from nltk.tag import untag, RegexpTagger, BrillTaggerTrainer, UnigramTagger
+from sklearn.model_selection import StratifiedKFold
+import numpy as np
+import warnings
 
 
 def main():
-    with open('text_data/screenshot_20220329_193633.txt', 'r') as f:
+    warnings.filterwarnings('ignore', '.*The least populated*', )
+
+    unigram_standalone()
+    unigram_with_regexp()
+
+def unigram_standalone():
+    results = np.zeros(5)
+    with open('text_data/shakespeare_merged.txt', 'r') as f:
         text = f.read()
-        labeled_text = preprocess_text(text)
-        k = math.floor(len(labeled_text) / 4)
-        # print(labeled_text)
-        training_data = labeled_text[:k]
-        baseline_data = labeled_text[k:3 * k]
-        gold_data = list(labeled_text[3 * k:])
-        # print(gold_data)
-        testing_data = [untag([s]) for s in gold_data]
-        backoff = RegexpTagger([
-            (r'^-?[0-9]+(.[0-9]+)?$', 'CD'),  # cardinal numbers
-            (r'(The|the|A|a|An|an)$', 'AT'),  # articles
-            (r'.*able$', 'JJ'),  # adjectives
-            (r'.*ness$', 'NN'),  # nouns formed from adjectives
-            (r'.*ly$', 'RB'),  # adverbs
-            (r'.*s$', 'NNS'),  # plural nouns
-            (r'.*ing$', 'VBG'),  # gerunds
-            (r'.*ed$', 'VBD'),  # past tense verbs
-            (r'.*', 'NN')  # nouns (default)
-        ])
+    labeled_text = preprocess_text(text)
+    k = math.floor(len(labeled_text) / 4)
+    # print(labeled_text)
+    skf = StratifiedKFold(n_splits=5, random_state=0, shuffle=True)
+    X, y = map(list, zip(*labeled_text))
+    # print(list(zip(X, y)))
+    X = np.array(X)
+    y = np.array(y)
+    for j, (train_index, test_index) in enumerate(skf.split(X, y)):
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+        unigram_tagger = UnigramTagger([list(zip(X_train, y_train))])
+        results[j] = unigram_tagger.accuracy([list(zip(X_test, y_test))])
+    print(f"Unigram (standalone): {results.mean(axis=0):.3f}")
+    return results
 
-        unigram_tagger = UnigramTagger([baseline_data], backoff=backoff)
-        print(unigram_tagger.accuracy([gold_data]))
 
+def unigram_with_regexp():
+    results = np.zeros(5)
+    with open('text_data/shakespeare_merged.txt', 'r') as f:
+        text = f.read()
+    labeled_text = preprocess_text(text)
+    k = math.floor(len(labeled_text) / 4)
+    # print(labeled_text)
+    skf = StratifiedKFold(n_splits=5, random_state=0, shuffle=True)
+    X, y = map(list, zip(*labeled_text))
+    # print(list(zip(X, y)))
+    X = np.array(X)
+    y = np.array(y)
+    backoff = RegexpTagger([
+        (r'^-?[0-9]+(.[0-9]+)?$', 'CD'),  # cardinal numbers
+        (r'(The|the|A|a|An|an)$', 'AT'),  # articles
+        (r'.*able$', 'JJ'),  # adjectives
+        (r'.*ness$', 'NN'),  # nouns formed from adjectives
+        (r'.*ly$', 'RB'),  # adverbs
+        (r'.*s$', 'NNS'),  # plural nouns
+        (r'.*ing$', 'VBG'),  # gerunds
+        (r'.*ed$', 'VBD'),  # past tense verbs
+        (r'.*', 'NN')  # nouns (default)
+    ])
+    for j, (train_index, test_index) in enumerate(skf.split(X, y)):
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+        unigram_tagger = UnigramTagger([list(zip(X_train, y_train))],
+            backoff=backoff)
+        results[j] = unigram_tagger.accuracy([list(zip(X_test, y_test))])
+    print(f"Unigram (with Regexp): {results.mean(axis=0):.3f}")
+    return results
 
 def preprocess_text(text):
-    """
-    This function takes a text. Split it in tokens using word_tokenize.
-    And then tags them using pos_tag from NLTK module.
-    It outputs a list of tuples. Each tuple consists of a word and the tag with its
-    part of speech.
-    """
+
     # Get the tokens
     tokens = nltk.word_tokenize(text)
     # Tags the tokens
