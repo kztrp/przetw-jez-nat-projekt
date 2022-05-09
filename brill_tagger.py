@@ -5,11 +5,14 @@ import pickle
 import random
 import time
 
+import nltk
 from nltk.corpus import treebank
 from nltk.tag import BrillTaggerTrainer, RegexpTagger, UnigramTagger
 from nltk.tag.brill import Pos, Word
 from nltk.tbl import Template, error_list
 
+import numpy as np
+from sklearn.model_selection import StratifiedKFold
 
 def demo():
     """
@@ -216,6 +219,8 @@ def postag(
     is fast and fine for a demo, but is likely to generalize worse on unseen data.
     Also cannot be sensibly used for learning curves on training data (the baseline will be artificially high).
     """
+    results = np.zeros(5)
+    skf = StratifiedKFold(n_splits=5, random_state=0, shuffle=True)
 
     # defaults
     baseline_backoff_tagger = baseline_backoff_tagger or REGEXP_TAGGER
@@ -226,105 +231,103 @@ def postag(
         # available. Print a list with describe_template_sets()
         # for instance:
         templates = brill24()
-    (training_data, baseline_data, gold_data, testing_data) = _demo_prepare_data(
-        tagged_data, train, num_sents, randomize, separate_baseline_data
-    )
+    X, y = _demo_prepare_data(tagged_data, train, num_sents, randomize, separate_baseline_data)
 
     # creating (or reloading from cache) a baseline tagger (unigram tagger)
     # this is just a mechanism for getting deterministic output from the baseline between
     # python versions
-    if cache_baseline_tagger:
-        if not os.path.exists(cache_baseline_tagger):
-            baseline_tagger = UnigramTagger(
-                baseline_data, backoff=baseline_backoff_tagger
-            )
-            with open(cache_baseline_tagger, "w") as print_rules:
-                pickle.dump(baseline_tagger, print_rules)
-            print(
-                "Trained baseline tagger, pickled it to {}".format(
-                    cache_baseline_tagger
+    for j, (train_index, test_index) in enumerate(skf.split(X, y)):
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+        if cache_baseline_tagger:
+            if not os.path.exists(cache_baseline_tagger):
+                baseline_tagger = UnigramTagger([list(zip(X_train, y_train))], backoff=baseline_backoff_tagger
+                )
+                with open(cache_baseline_tagger, "w") as print_rules:
+                    pickle.dump(baseline_tagger, print_rules)
+                print(
+                    "Trained baseline tagger, pickled it to {}".format(
+                        cache_baseline_tagger
+                    )
+                )
+            with open(cache_baseline_tagger) as print_rules:
+                baseline_tagger = pickle.load(print_rules)
+                print(f"Reloaded pickled tagger from {cache_baseline_tagger}")
+        else:
+            baseline_tagger = UnigramTagger([list(zip(X_train, y_train))], backoff=baseline_backoff_tagger)
+            print("Trained baseline tagger")
+        print("Accuracy on test set (baseline tagger): {:0.4f}".format(
+                    baseline_tagger.accuracy([list(zip(X_test, y_test))])
                 )
             )
-        with open(cache_baseline_tagger) as print_rules:
-            baseline_tagger = pickle.load(print_rules)
-            print(f"Reloaded pickled tagger from {cache_baseline_tagger}")
-    else:
-        baseline_tagger = UnigramTagger(baseline_data, backoff=baseline_backoff_tagger)
-        print("Trained baseline tagger")
-    if gold_data:
-        print(
-            "    Accuracy on test set: {:0.4f}".format(
-                baseline_tagger.accuracy(gold_data)
-            )
+
+        # creating a Brill tagger
+        tbrill = time.time()
+        trainer = BrillTaggerTrainer(
+            baseline_tagger, templates, trace, ruleformat=ruleformat
         )
+        print("Training tbl tagger...")
+        brill_tagger = trainer.train([list(zip(X_train, y_train))], max_rules, min_score, min_acc)
+        print(f"Trained tbl tagger in {time.time() - tbrill:0.2f} seconds")
+        results[j] = brill_tagger.accuracy([list(zip(X_test, y_test))])
+        print("Accuracy on test set: %.4f" % results[j])
 
-    # creating a Brill tagger
-    tbrill = time.time()
-    trainer = BrillTaggerTrainer(
-        baseline_tagger, templates, trace, ruleformat=ruleformat
-    )
-    print("Training tbl tagger...")
-    brill_tagger = trainer.train(training_data, max_rules, min_score, min_acc)
-    print(f"Trained tbl tagger in {time.time() - tbrill:0.2f} seconds")
-    if gold_data:
-        print("    Accuracy on test set: %.4f" % brill_tagger.accuracy(gold_data))
-
-    # printing the learned rules, if learned silently
-    if trace == 1:
-        print("\nLearned rules: ")
-        for (ruleno, rule) in enumerate(brill_tagger.rules(), 1):
-            print(f"{ruleno:4d} {rule.format(ruleformat):s}")
-
-    # printing template statistics (optionally including comparison with the training data)
-    # note: if not separate_baseline_data, then baseline accuracy will be artificially high
-    if incremental_stats:
-        print(
-            "Incrementally tagging the test data, collecting individual rule statistics"
-        )
-        (taggedtest, teststats) = brill_tagger.batch_tag_incremental(
-            testing_data, gold_data
-        )
-        print("    Rule statistics collected")
-        if not separate_baseline_data:
-            print(
-                "WARNING: train_stats asked for separate_baseline_data=True; the baseline "
-                "will be artificially high"
-            )
-        trainstats = brill_tagger.train_stats()
-        if template_stats:
-            brill_tagger.print_template_statistics(teststats)
-        if learning_curve_output:
-            _demo_plot(
-                learning_curve_output, teststats, trainstats, take=learning_curve_take
-            )
-            print(f"Wrote plot of learning curve to {learning_curve_output}")
-    else:
-        print("Tagging the test data")
-        taggedtest = brill_tagger.tag_sents(testing_data)
-        if template_stats:
-            brill_tagger.print_template_statistics()
-
-    # writing error analysis to file
-    if error_output is not None:
-        with open(error_output, "w") as f:
-            f.write("Errors for Brill Tagger %r\n\n" % serialize_output)
-            f.write("\n".join(error_list(gold_data, taggedtest)).encode("utf-8") + "\n")
-        print(f"Wrote tagger errors including context to {error_output}")
-
-    # serializing the tagger to a pickle file and reloading (just to see it works)
-    if serialize_output is not None:
-        taggedtest = brill_tagger.tag_sents(testing_data)
-        with open(serialize_output, "w") as print_rules:
-            pickle.dump(brill_tagger, print_rules)
-        print(f"Wrote pickled tagger to {serialize_output}")
-        with open(serialize_output) as print_rules:
-            brill_tagger_reloaded = pickle.load(print_rules)
-        print(f"Reloaded pickled tagger from {serialize_output}")
-        taggedtest_reloaded = brill_tagger.tag_sents(testing_data)
-        if taggedtest == taggedtest_reloaded:
-            print("Reloaded tagger tried on test set, results identical")
-        else:
-            print("PROBLEM: Reloaded tagger gave different results on test set")
+        # printing the learned rules, if learned silently
+        if trace == 1:
+            print("\nLearned rules: ")
+            for (ruleno, rule) in enumerate(brill_tagger.rules(), 1):
+                print(f"{ruleno:4d} {rule.format(ruleformat):s}")
+    print(f"Brill Tagger Trainer: {results.mean(axis=0):.3f}")
+        # printing template statistics (optionally including comparison with the training data)
+        # note: if not separate_baseline_data, then baseline accuracy will be artificially high
+        # if incremental_stats:
+        #     print(
+        #         "Incrementally tagging the test data, collecting individual rule statistics"
+        #     )
+        #     (taggedtest, teststats) = brill_tagger.batch_tag_incremental(
+        #         testing_data, gold_data
+        #     )
+        #     print("    Rule statistics collected")
+        #     if not separate_baseline_data:
+        #         print(
+        #             "WARNING: train_stats asked for separate_baseline_data=True; the baseline "
+        #             "will be artificially high"
+        #         )
+        #     trainstats = brill_tagger.train_stats()
+        #     if template_stats:
+        #         brill_tagger.print_template_statistics(teststats)
+        #     if learning_curve_output:
+        #         _demo_plot(
+        #             learning_curve_output, teststats, trainstats, take=learning_curve_take
+        #         )
+        #         print(f"Wrote plot of learning curve to {learning_curve_output}")
+        # else:
+        #     print("Tagging the test data")
+        #     taggedtest = brill_tagger.tag_sents(testing_data)
+        #     if template_stats:
+        #         brill_tagger.print_template_statistics()
+        #
+        # # writing error analysis to file
+        # if error_output is not None:
+        #     with open(error_output, "w") as f:
+        #         f.write("Errors for Brill Tagger %r\n\n" % serialize_output)
+        #         f.write("\n".join(error_list(gold_data, taggedtest)).encode("utf-8") + "\n")
+        #     print(f"Wrote tagger errors including context to {error_output}")
+        #
+        # # serializing the tagger to a pickle file and reloading (just to see it works)
+        # if serialize_output is not None:
+        #     taggedtest = brill_tagger.tag_sents(testing_data)
+        #     with open(serialize_output, "w") as print_rules:
+        #         pickle.dump(brill_tagger, print_rules)
+        #     print(f"Wrote pickled tagger to {serialize_output}")
+        #     with open(serialize_output) as print_rules:
+        #         brill_tagger_reloaded = pickle.load(print_rules)
+        #     print(f"Reloaded pickled tagger from {serialize_output}")
+        #     taggedtest_reloaded = brill_tagger.tag_sents(testing_data)
+        #     if taggedtest == taggedtest_reloaded:
+        #         print("Reloaded tagger tried on test set, results identical")
+        #     else:
+        #         print("PROBLEM: Reloaded tagger gave different results on test set")
 
 
 def _demo_prepare_data(
@@ -332,39 +335,46 @@ def _demo_prepare_data(
 ):
     # train is the proportion of data used in training; the rest is reserved
     # for testing.
-    if tagged_data is None:
-        print("Loading tagged data from treebank... ")
-        tagged_data = treebank.tagged_sents()
-    if num_sents is None or len(tagged_data) <= num_sents:
-        num_sents = len(tagged_data)
-    if randomize:
-        random.seed(len(tagged_data))
-        random.shuffle(tagged_data)
-    cutoff = int(num_sents * train)
-    training_data = tagged_data[:cutoff]
-    gold_data = tagged_data[cutoff:num_sents]
-    testing_data = [[t[0] for t in sent] for sent in gold_data]
-    if not separate_baseline_data:
-        baseline_data = training_data
-    else:
-        bl_cutoff = len(training_data) // 3
-        (baseline_data, training_data) = (
-            training_data[:bl_cutoff],
-            training_data[bl_cutoff:],
-        )
-    (trainseqs, traintokens) = corpus_size(training_data)
-    (testseqs, testtokens) = corpus_size(testing_data)
-    (bltrainseqs, bltraintokens) = corpus_size(baseline_data)
-    print(f"Read testing data ({testseqs:d} sents/{testtokens:d} wds)")
-    print(f"Read training data ({trainseqs:d} sents/{traintokens:d} wds)")
-    print(
-        "Read baseline data ({:d} sents/{:d} wds) {:s}".format(
-            bltrainseqs,
-            bltraintokens,
-            "" if separate_baseline_data else "[reused the training set]",
-        )
-    )
-    return (training_data, baseline_data, gold_data, testing_data)
+    # if tagged_data is None:
+    #     print("Loading tagged data from treebank... ")
+    #     tagged_data = treebank.tagged_sents()
+    # if num_sents is None or len(tagged_data) <= num_sents:
+    #     num_sents = len(tagged_data)
+    # if randomize:
+    #     random.seed(len(tagged_data))
+    #     random.shuffle(tagged_data)
+    # cutoff = int(num_sents * train)
+    # training_data = tagged_data[:cutoff]
+    # gold_data = tagged_data[cutoff:num_sents]
+    # testing_data = [[t[0] for t in sent] for sent in gold_data]
+    # if not separate_baseline_data:
+    #     baseline_data = training_data
+    # else:
+    #     bl_cutoff = len(training_data) // 3
+    #     (baseline_data, training_data) = (
+    #         training_data[:bl_cutoff],
+    #         training_data[bl_cutoff:],
+    #     )
+    # (trainseqs, traintokens) = corpus_size(training_data)
+    # (testseqs, testtokens) = corpus_size(testing_data)
+    # (bltrainseqs, bltraintokens) = corpus_size(baseline_data)
+    # print(f"Read testing data ({testseqs:d} sents/{testtokens:d} wds)")
+    # print(f"Read training data ({trainseqs:d} sents/{traintokens:d} wds)")
+    # print(
+    #     "Read baseline data ({:d} sents/{:d} wds) {:s}".format(
+    #         bltrainseqs,
+    #         bltraintokens,
+    #         "" if separate_baseline_data else "[reused the training set]",
+    #     )
+    # )
+    with open('text_data/shakespeare_merged.txt', 'r') as f:
+        text = f.read()
+    labeled_text = preprocess_text(text)
+    X, y = map(list, zip(*labeled_text))
+    # print(list(zip(X, y)))
+    X = np.array(X)
+    y = np.array(y)
+    return X, y
 
 
 def _demo_plot(learning_curve_output, teststats, trainstats=None, take=None):
@@ -405,6 +415,15 @@ REGEXP_TAGGER = RegexpTagger(
 
 def corpus_size(seqs):
     return (len(seqs), sum(len(x) for x in seqs))
+
+def preprocess_text(text):
+
+    # Get the tokens
+    tokens = nltk.word_tokenize(text)
+    # Tags the tokens
+    tagging = nltk.pos_tag(tokens)
+    # Returns the list of tuples
+    return tagging
 
 
 if __name__ == "__main__":

@@ -19,7 +19,6 @@ def unigram_standalone():
     with open('text_data/shakespeare_merged.txt', 'r') as f:
         text = f.read()
     labeled_text = preprocess_text(text)
-    k = math.floor(len(labeled_text) / 4)
     # print(labeled_text)
     skf = StratifiedKFold(n_splits=5, random_state=0, shuffle=True)
     X, y = map(list, zip(*labeled_text))
