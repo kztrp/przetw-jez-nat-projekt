@@ -24,7 +24,7 @@ def unigram_standalone():
     # print(list(zip(X, y)))
     X = np.array(X)
     y = np.array(y)
-    for j, (train_index, test_index) in enumerate(skf.split(X, y)):
+    for j, (train_index, test_index) in enumerate(rskf.split(X, y)):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
         unigram_tagger = UnigramTagger([list(zip(X_train, y_train))])
@@ -56,7 +56,7 @@ def unigram_with_regexp():
         (r'.*ed$', 'VBD'),  # past tense verbs
         (r'.*', 'NN')  # nouns (default)
     ])
-    for j, (train_index, test_index) in enumerate(skf.split(X, y)):
+    for j, (train_index, test_index) in enumerate(rskf.split(X, y)):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
         unigram_tagger = UnigramTagger([list(zip(X_train, y_train))],
