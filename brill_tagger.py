@@ -7,7 +7,7 @@ import nltk
 from nltk.tag import BrillTaggerTrainer, RegexpTagger, UnigramTagger
 
 import numpy as np
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import RepeatedStratifiedKFold
 
 
 def verbose_rule_format():
@@ -36,8 +36,8 @@ def start_postag_brill_tagger(
         separate_baseline_data=False,
         cache_baseline_tagger=None,
 ):
-    results = np.zeros(5)
-    skf = StratifiedKFold(n_splits=5, random_state=0, shuffle=True)
+    results = np.zeros(10)
+    rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=2, random_state=1234)
 
     # defaults
     baseline_backoff_tagger = baseline_backoff_tagger or REGEXP_TAGGER
@@ -53,7 +53,7 @@ def start_postag_brill_tagger(
     # creating (or reloading from cache) a baseline tagger (unigram tagger)
     # this is just a mechanism for getting deterministic output from the baseline between
     # python versions
-    for j, (train_index, test_index) in enumerate(skf.split(X, y)):
+    for j, (train_index, test_index) in enumerate(rskf.split(X, y)):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
         if cache_baseline_tagger:
