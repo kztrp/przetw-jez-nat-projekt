@@ -3,7 +3,7 @@ import math
 from nltk.tbl.template import Template
 from nltk.tag.brill import Pos, Word
 from nltk.tag import untag, RegexpTagger, BrillTaggerTrainer, UnigramTagger
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import RepeatedStratifiedKFold
 import numpy as np
 import warnings
 
@@ -20,7 +20,7 @@ def unigram_standalone():
         text = f.read()
     labeled_text = preprocess_text(text)
     # print(labeled_text)
-    skf = StratifiedKFold(n_splits=5, random_state=0, shuffle=True)
+    rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=2, random_state=1234)
     X, y = map(list, zip(*labeled_text))
     # print(list(zip(X, y)))
     X = np.array(X)
