@@ -14,7 +14,7 @@ def main():
     unigram_with_regexp()
 
 def unigram_standalone():
-    results = np.zeros(5)
+    results = np.zeros(10)
     with open('text_data/shakespeare_merged.txt', 'r') as f:
         text = f.read()
     labeled_text = preprocess_text(text)
@@ -34,13 +34,13 @@ def unigram_standalone():
 
 
 def unigram_with_regexp():
-    results = np.zeros(5)
+    results = np.zeros(10)
     with open('text_data/shakespeare_merged.txt', 'r') as f:
         text = f.read()
     labeled_text = preprocess_text(text)
     k = math.floor(len(labeled_text) / 4)
     # print(labeled_text)
-    skf = StratifiedKFold(n_splits=5, random_state=0, shuffle=True)
+    rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=2, random_state=1234)
     X, y = map(list, zip(*labeled_text))
     # print(list(zip(X, y)))
     X = np.array(X)
