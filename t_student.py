@@ -9,9 +9,9 @@ from brill_tagger import start_postag_brill_tagger
 def main():
     warnings.filterwarnings('ignore', '.*The least populated*', )
     scores = np.zeros((3, 10))
-    scores[0] = unigram_standalone()
-    scores[1] = unigram_with_regexp()
-    scores[2] = start_postag_brill_tagger()
+    scores[0], _ = unigram_standalone()
+    scores[1], _ = unigram_with_regexp()
+    scores[2], _ = start_postag_brill_tagger()
     alfa = .05
     print(scores)
     print(scores.mean(axis=1))

@@ -5,7 +5,6 @@ import pickle
 import time
 import nltk
 from nltk.tag import BrillTaggerTrainer, RegexpTagger, UnigramTagger
-
 import numpy as np
 from sklearn.model_selection import RepeatedStratifiedKFold
 
@@ -94,8 +93,10 @@ def start_postag_brill_tagger(
             print("\nLearned rules: ")
             for (ruleno, rule) in enumerate(brill_tagger.rules(), 1):
                 print(f"{ruleno:4d} {rule.format(rule_format):s}")
+    tagged_data = brill_tagger.tag(X)
+
     print(f"Brill Tagger Trainer: {results.mean(axis=0):.3f}")
-    return results
+    return results, tagged_data
 
 
 def _demo_prepare_data(

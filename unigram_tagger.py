@@ -23,8 +23,9 @@ def unigram_standalone():
         y_train, y_test = y[train_index], y[test_index]
         unigram_tagger = UnigramTagger([list(zip(X_train, y_train))])
         results[j] = unigram_tagger.accuracy([list(zip(X_test, y_test))])
+    tagged_data = unigram_tagger.tag(X)
     print(f"Unigram (standalone): {results.mean(axis=0):.3f}")
-    return results
+    return results, tagged_data
 
 
 def unigram_with_regexp():
@@ -56,8 +57,9 @@ def unigram_with_regexp():
         unigram_tagger = UnigramTagger([list(zip(X_train, y_train))],
             backoff=backoff)
         results[j] = unigram_tagger.accuracy([list(zip(X_test, y_test))])
+    tagged_data = unigram_tagger.tag(X)
     print(f"Unigram (with Regexp): {results.mean(axis=0):.3f}")
-    return results
+    return results, tagged_data
 
 def preprocess_text(text):
 
