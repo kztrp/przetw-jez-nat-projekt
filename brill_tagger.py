@@ -95,6 +95,7 @@ def start_postag_brill_tagger(
             for (ruleno, rule) in enumerate(brill_tagger.rules(), 1):
                 print(f"{ruleno:4d} {rule.format(rule_format):s}")
     print(f"Brill Tagger Trainer: {results.mean(axis=0):.3f}")
+    return results
 
 
 def _demo_prepare_data(

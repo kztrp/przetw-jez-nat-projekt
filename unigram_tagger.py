@@ -7,13 +7,6 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 import numpy as np
 import warnings
 
-
-def main():
-    warnings.filterwarnings('ignore', '.*The least populated*', )
-
-    unigram_standalone()
-    unigram_with_regexp()
-
 def unigram_standalone():
     results = np.zeros(10)
     with open('text_data/shakespeare_merged.txt', 'r') as f:
@@ -74,7 +67,3 @@ def preprocess_text(text):
     tagging = nltk.pos_tag(tokens)
     # Returns the list of tuples
     return tagging
-
-
-if __name__ == '__main__':
-    main()

@@ -44,6 +44,7 @@ spacy-legacy==3.0.9
 spacy-loggers==1.0.2
 srsly==2.4.3
 stack-data==0.2.0
+tabulate==0.8.9
 thinc==8.0.15
 tqdm==4.64.0
 traitlets==5.1.1
