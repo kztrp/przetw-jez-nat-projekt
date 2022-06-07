@@ -44,9 +44,13 @@ Run the Python interpreter and type the commands:
 
 ## Getting started [for developers]
 
+
+Install packages with pip: -r requirements.txt
+
+### `$ pip install -r requirements.txt`
+
+
 ## Project Structure
-
-
 
  *Full Breakdown*
 
@@ -67,9 +71,7 @@ Run the Python interpreter and type the commands:
 
 ## Running the application [for developers]
 
-Install packages with pip: -r requirements.txt
 
-### `$ pip install -r requirements.txt`
 
 U can run  `$ python ./t_student.py `  for statistical tests. Run 'ner.py' for performs an Named Entity Recognition.
 
