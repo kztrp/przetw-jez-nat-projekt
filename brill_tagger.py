@@ -8,18 +8,6 @@ from nltk.tag import BrillTaggerTrainer, RegexpTagger, UnigramTagger
 import numpy as np
 from sklearn.model_selection import RepeatedStratifiedKFold
 
-
-def verbose_rule_format():
-    """
-    Exemplify Rule.format("verbose")
-    """
-    start_postag_brill_tagger(rule_format="verbose")
-
-
-def high_accuracy_rules():
-    start_postag_brill_tagger(num_sentences=3000, min_acc=0.96, min_score=10)
-
-
 def start_postag_brill_tagger(
         templates=None,
         tagged_data=None,  # maximum number of rule instances to create
@@ -106,7 +94,6 @@ def _demo_prepare_data(
         text = f.read()
     labeled_text = preprocess_text(text)
     X, y = map(list, zip(*labeled_text))
-    # print(list(zip(X, y)))
     X = np.array(X)
     y = np.array(y)
     return X, y
@@ -128,11 +115,6 @@ REGEXP_TAGGER = RegexpTagger(
     ]
 )
 
-
-def corpus_size(seqs):
-    return len(seqs), sum(len(x) for x in seqs)
-
-
 def preprocess_text(text):
     # Get the tokens
     tokens = nltk.word_tokenize(text)
@@ -144,4 +126,3 @@ def preprocess_text(text):
 
 if __name__ == "__main__":
     start_postag_brill_tagger()
-    # start_postag_brill_tagger(ruleformat="verbose")

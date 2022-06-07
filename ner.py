@@ -19,13 +19,9 @@ def main():
     for i, word in enumerate(brill_tagger_data):
         if word[1] is None:
             unigram_data[i] = (word[0], '')
-    # print([t[-1].replace(None, '') for t in unigram_data])
     ne_tree_unigram = ne_chunk(unigram_data, binary=False)
     ne_tree_unigram_regex = ne_chunk(unigram_regex_data, binary=False)
     ne_tree_brill = ne_chunk(brill_tagger_data, binary=False)
-    # print(f'Unigram tagger, liczba tagów: {len(ne_tree_unigram)}, wykryte tagi:\n{ne_tree_unigram}')
-    # print(f'Unigram tagger+regex, liczba tagów: {len(ne_tree_unigram_regex)}, wykryte tagi:\n{ne_tree_unigram_regex}')
-    # print(f'Brill tagger, liczba tagów: {len(ne_tree_brill)}, wykryte tagi:\n{ne_tree_brill}')
     i=0
     for chunk in ne_tree_unigram:
        if hasattr(chunk, 'label'):
