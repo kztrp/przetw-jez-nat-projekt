@@ -71,7 +71,7 @@ Install packages with pip: -r requirements.txt
 
 ### `$ pip install -r requirements.txt`
 
-U can run  ### `$ python ./t_student.py `  for statistical tests. Abd ner.py for performs an Named Entity Recognition.
+U can run  `$ python ./t_student.py `  for statistical tests. Run 'ner.py' for performs an Named Entity Recognition.
 
 
 
