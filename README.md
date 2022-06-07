@@ -51,16 +51,28 @@ Run the Python interpreter and type the commands:
  *Full Breakdown*
 
  ```sh
- .
+ <przetw-jez-nat-projekt-main>
  ├── text_data # Scanned documents for testing
- ├── brill_tagger.py #
- ├── ner.py # 
+ ├── brill_tagger.py # method brill tagger
+ ├── ner.py # Main file. Performs an Named Entity Recognition from the data returned by the tagers.
  ├── README.md # 
- ├── requirements.txt #
- ├── t_student.py # 
- ├── unigram_tagger.py # 
+ ├── requirements.txt # 
+ ├── t_student.py # used for statistical tests
+ ├── unigram_tagger.py # method unigram tagger
 
  ```
+ 
+ A “tag” is a case-sensitive string that specifies some property of a token, such as its part of speech. Tagged tokens are encoded as tuples (tag, token). For example, the following tagged token combines the word 'fly' with a noun part of speech tag ('NN'):
+ 
 
 ## Running the application [for developers]
+
+Install packages with pip: -r requirements.txt
+
+### `$ pip install -r requirements.txt`
+
+U can run  ### `$ python ./t_student.py `  for statistical tests. Abd ner.py for performs an Named Entity Recognition.
+
+
+
 
