@@ -44,5 +44,23 @@ Run the Python interpreter and type the commands:
 
 ## Getting started [for developers]
 
+## Project Structure
+
+
+
+ *Full Breakdown*
+
+ ```sh
+ .
+ ├── text_data # Scanned documents for testing
+ ├── brill_tagger.py #
+ ├── ner.py # 
+ ├── README.md # 
+ ├── requirements.txt #
+ ├── t_student.py # 
+ ├── unigram_tagger.py # 
+
+ ```
+
 ## Running the application [for developers]
 
